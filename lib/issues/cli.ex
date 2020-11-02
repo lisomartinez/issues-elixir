@@ -13,15 +13,31 @@ defmodule Issues.CLI do
   end
 
   def process(:help) do
-    IO.puts """
+    IO.puts("""
     usage: issues <user> <prohect> [ count | #{@default_count}]
-    """
+    """)
+
     System.halt(0)
   end
 
   def process({user, project, _count}) do
     Issues.GithubIssues.fetch(user, project)
+    |> decode_response()
+    |> sort_into_descending_order()
   end
+
+  def decode_response({:ok, body}), do: body
+
+  def decode_response({:error, error}) do
+    IO.puts("Error fetching from Github: #{error["message"]}")
+    System.halt(2)
+  end
+
+  def sort_into_descending_order(list_of_issues) do
+    list_of_issues
+    |> Enum.sort(fn i1, i2 -> i1["created_at"] >= i2["created_at"] end)
+  end
+
   @doc """
   `argv` can be -h or --help, which returns :help.
   Otherwiese it is a github user name, project name, and (optionally)
