@@ -16,7 +16,8 @@ defmodule Issues.GithubIssues do
   def handle_response({:ok, %{status_code: status_code, body: body}}) do
     {
       status_code |> check_for_error(),
-      body |> Jason.decode!(body)
+      body |> Jason.decode!()
+      # body |> Poison.Parser.parse!()
     }
   end
 

@@ -1,12 +1,11 @@
 defmodule Issues.CLI do
   @default_count 4
-
   @moduledoc """
   Handle the command line parsing and the dispatch to
   the varuous functions that end up generating a
   table of the last _n_ issues in a github project
   """
-  def run(argv) do
+  def main(argv) do
     argv
     |> parse_args
     |> process
@@ -20,10 +19,12 @@ defmodule Issues.CLI do
     System.halt(0)
   end
 
-  def process({user, project, _count}) do
+  def process({user, project, count}) do
     Issues.GithubIssues.fetch(user, project)
     |> decode_response()
     |> sort_into_descending_order()
+    |> last(count)
+    |> Issues.TableFormatter.print_table_for_columns(["number", "created_at", "title"])
   end
 
   def decode_response({:ok, body}), do: body
@@ -38,6 +39,13 @@ defmodule Issues.CLI do
     |> Enum.sort(fn i1, i2 -> i1["created_at"] >= i2["created_at"] end)
   end
 
+  def last(list, count) do
+    list
+    |> Enum.take(count)
+    |> Enum.reverse()
+  end
+
+  @spec parse_args([binary]) :: :help | {any, any, integer}
   @doc """
   `argv` can be -h or --help, which returns :help.
   Otherwiese it is a github user name, project name, and (optionally)
